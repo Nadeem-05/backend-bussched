@@ -31,5 +31,6 @@ async def check_coordinates(new_coord: str):
         return jsonable_encoder({"message": False})
 
 if __name__ == "__main__":
+    print("app is live")
     uvicorn.run(app="main:app", host="localhost", port=8000,reload=True)
     
