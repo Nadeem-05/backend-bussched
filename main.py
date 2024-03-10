@@ -13,7 +13,7 @@ coordinates = {
     "cit_college":(12.971845651701978,80.04306665944301)
 }
 
-@app.get("/check_coordinates/{new_coord}")
+@app.get("/check/{new_coord}")
 async def check_coordinates(new_coord: str):
     closest_location = None
     min_distance = float('inf')
