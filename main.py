@@ -1,9 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from typing import Dict
-from fastapi.encoders import jsonable_encoder
 from geopy.distance import geodesic
 import uvicorn
-
 app = FastAPI()
 
 coordinates = {
@@ -12,9 +10,13 @@ coordinates = {
     "nad_house":(12.925421,80.141575),
     "cit_college":(12.971845651701978,80.04306665944301)
 }
+@app.get("/check_coordinates/")
+async def check_coordinates(request: Request):
+    new_coord = request.headers.get("new_coord")
 
-@app.get("/check/{new_coord}")
-async def check_coordinates(new_coord: str):
+    if new_coord is None:
+        return {"error": "New coordinate not provided in headers."}
+
     closest_location = None
     min_distance = float('inf')
 
@@ -25,10 +27,11 @@ async def check_coordinates(new_coord: str):
         if distance < min_distance:
             min_distance = distance
             closest_location = location
-    if min_distance <= 1000:
-        return jsonable_encoder({"closest_location": closest_location, "distance_to_closest_location": min_distance,"message":True})
+
+    if min_distance <= 100:
+        return {"closest_location": closest_location, "distance_to_closest_location": min_distance}
     else:
-        return jsonable_encoder({"message": False})
+        return {"message": "No location within 100m radius."}
 
 if __name__ == "__main__":
     print("app is live")
