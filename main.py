@@ -26,7 +26,7 @@ async def check_coordinates(new_coord: str):
             min_distance = distance
             closest_location = location
     if min_distance <= 1000:
-        return jsonable_encoder({"closest_location": closest_location, "distance_to_closest_location": min_distance,"message":True})
+        return jsonable_encoder({"closest_location": closest_location, "distance_to_closest_location": int(min_distance),"message":True})
     else:
         return jsonable_encoder({"message": False})
 
