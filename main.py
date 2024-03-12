@@ -128,7 +128,7 @@ def get_db():
         db.close()
 
 # Endpoint to view databases
-@app.get("/view-databases")
+@app.get("/view")
 async def view_databases(db: Session = Depends(get_db)):
     # Fetch data from the database
     votes = db.query(Vote).all()
