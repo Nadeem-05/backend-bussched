@@ -6,7 +6,6 @@ from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import sessionmaker,declarative_base, Session
 import requests
 import json
-from typing import List
 from jinja2 import Environment, FileSystemLoader
 import os
 APP_ID = '9147fe2e-8d34-4ce8-9d7e-6ebf30d3470f'
@@ -107,14 +106,10 @@ async def busfunc(BusNo_device_id: str):
                 record_vote(db, BusNo, device_id)
                 return "Vote count incremented"
     except Exception as e:
-        # Log the exception
         print(f"An error occurred: {e}")
-        # Rollback the transaction
         db.rollback()
-        # Raise an HTTPException with appropriate status code and message
         raise HTTPException(status_code=500, detail="An error occurred while processing the request")
     finally:
-        # Close the session
         db.close()
         
 templates_dir = os.path.join(os.getcwd(), "templates")
@@ -127,18 +122,14 @@ def get_db():
     finally:
         db.close()
 
-# Endpoint to view databases
 @app.get("/view")
 async def view_databases(db: Session = Depends(get_db)):
-    # Fetch data from the database
     votes = db.query(Vote).all()
     buses = db.query(BUS).all()
 
-    # Render the HTML template with fetched data
     template = env.get_template("view_db.html")
     rendered_html = template.render(votes=votes, buses=buses)
 
-    # Return the rendered HTML as a response
     return HTMLResponse(content=rendered_html)
 
 
