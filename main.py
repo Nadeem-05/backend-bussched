@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from geopy.distance import geodesic
+from fastapi import HTTPException
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import sessionmaker,declarative_base
 import requests
@@ -78,50 +79,40 @@ def send_notification_to_voters(device_ids):
 
 @app.get("/vote/{BusNo_device_id}")
 async def busfunc(BusNo_device_id: str):
-    # Split the combined parameter into BusNo and device_id
     BusNo, device_id = BusNo_device_id.split(',')
 
     db = SessionLocal()
-    result = db.query(BUS).filter(BUS.bus_no == BusNo).first()
-    if result is None:
-        bus_detail = BUS(bus_no=BusNo, vote_count=1, threshold=3)
-        db.add(bus_detail)
-        db.commit()
-        db.close()
-        record_vote(db, BusNo, device_id)
-        return "Data added"
-    else:
-        result.vote_count += 1
-        if result.vote_count > result.threshold:
-            db = SessionLocal()  # Start a new session for the transaction
-            try:
-                # Get all device IDs that voted for this bus
-                device_ids = db.query(Vote.device_id).filter(Vote.bus_no == BusNo).all()
-                device_ids = [device[0] for device in device_ids]  # Flatten list of tuples
-                
-                # Send notification to all voters
-                send_notification_to_voters(device_ids)
-                
-                # Delete votes for this bus from the Vote table
-                db.query(Vote).filter(Vote.bus_no == BusNo).delete()
-                
-                # Remove the bus object from the session
-                db.expunge(result)
-                
-                # Delete the bus record
-                db.delete(result)
-                
-                db.commit()  # Commit the transaction
-                return "Vote count incremented and notifications sent"
-            except Exception as e:
-                pass
-            finally:
-                db.close()  # Close the session
-            
-        else:
-            # Record the vote
+    try:
+        result = db.query(BUS).filter(BUS.bus_no == BusNo).first()
+        if result is None:
+            bus_detail = BUS(bus_no=BusNo, vote_count=1, threshold=3)
+            db.add(bus_detail)
+            db.commit()
             record_vote(db, BusNo, device_id)
-            return "Vote count incremented"
+            return "Data added"
+        else:
+            result.vote_count += 1
+            if result.vote_count > result.threshold:
+                device_ids = db.query(Vote.device_id).filter(Vote.bus_no == BusNo).all()
+                device_ids = [device[0] for device in device_ids]
+                send_notification_to_voters(device_ids)
+                db.query(Vote).filter(Vote.bus_no == BusNo).delete()
+                db.delete(result)
+                db.commit()
+                return "Vote count incremented and notifications sent"
+            else:
+                record_vote(db, BusNo, device_id)
+                return "Vote count incremented"
+    except Exception as e:
+        # Log the exception
+        print(f"An error occurred: {e}")
+        # Rollback the transaction
+        db.rollback()
+        # Raise an HTTPException with appropriate status code and message
+        raise HTTPException(status_code=500, detail="An error occurred while processing the request")
+    finally:
+        # Close the session
+        db.close()
 
 def record_vote(db, bus_no, device_id):
     vote = Vote(bus_no=bus_no, device_id=device_id)
