@@ -52,6 +52,21 @@ coordinates = {
     "cit_college": (12.971845651701978, 80.04306665944301)
 }
 
+@app.get("/check/{new_coord}")
+async def check_coordinates(new_coord: str):
+    closest_location = None
+    min_distance = float('inf')
+    new_coord = tuple(map(float, new_coord.split(',')))
+
+    for location, coord in coordinates.items():
+        distance = geodesic(new_coord, coord).meters
+        if distance < min_distance:
+            min_distance = distance
+            closest_location = location
+    if min_distance <= 1000:
+        return jsonable_encoder({"closest_location": closest_location, "distance_to_closest_location": int(min_distance),"message":True})
+    else:
+        return jsonable_encoder({"message": False})
 def send_notification_to_voters(device_ids):
     message["include_player_ids"] = device_ids
     response = requests.post(ONESIGNAL_API_URL, headers=headers, data=message_json)
