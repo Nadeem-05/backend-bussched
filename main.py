@@ -105,20 +105,16 @@ async def busfunc(BusNo_device_id: str):
                 # Delete votes for this bus from the Vote table
                 db.query(Vote).filter(Vote.bus_no == BusNo).delete()
                 
-                # Add the bus object to the session
-                db.add(result)
-                
-                # Expunge the bus object from the session
+                # Remove the bus object from the session
                 db.expunge(result)
                 
-                # Remove the bus record
+                # Delete the bus record
                 db.delete(result)
                 
                 db.commit()  # Commit the transaction
                 return "Vote count incremented and notifications sent"
             except Exception as e:
-                db.rollback()  # Rollback the transaction in case of any error
-                raise e
+                pass
             finally:
                 db.close()  # Close the session
             
