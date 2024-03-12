@@ -100,6 +100,7 @@ async def busfunc(BusNo_device_id: str):
                 device_ids = [device[0] for device in device_ids]
                 send_notification_to_voters(device_ids)
                 db.query(Vote).filter(Vote.bus_no == BusNo).delete()
+                db.expunge(result)
                 db.delete(result)
                 db.commit()
                 return "Vote count incremented and notifications sent"
