@@ -1,11 +1,14 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
-from geopy.distance import geodesic
-from fastapi import HTTPException
+from geopy.distance import geodesic 
+from fastapi.responses import HTMLResponse
 from sqlalchemy import create_engine, Column, Integer, String
-from sqlalchemy.orm import sessionmaker,declarative_base
+from sqlalchemy.orm import sessionmaker,declarative_base, Session
 import requests
 import json
+from typing import List
+from jinja2 import Environment, FileSystemLoader
+import os
 APP_ID = '9147fe2e-8d34-4ce8-9d7e-6ebf30d3470f'
 REST_API_KEY = 'NTczYjgxNDYtN2RjNi00M2I3LWEwOGMtNjc4ZDVlYjMyMDAw'
 
@@ -113,6 +116,32 @@ async def busfunc(BusNo_device_id: str):
     finally:
         # Close the session
         db.close()
+        
+templates_dir = os.path.join(os.getcwd(), "templates")
+env = Environment(loader=FileSystemLoader(templates_dir))
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# Endpoint to view databases
+@app.get("/view-databases")
+async def view_databases(db: Session = Depends(get_db)):
+    # Fetch data from the database
+    votes = db.query(Vote).all()
+    buses = db.query(BUS).all()
+
+    # Render the HTML template with fetched data
+    template = env.get_template("view_db.html")
+    rendered_html = template.render(votes=votes, buses=buses)
+
+    # Return the rendered HTML as a response
+    return HTMLResponse(content=rendered_html)
+
+
 
 def record_vote(db, bus_no, device_id):
     vote = Vote(bus_no=bus_no, device_id=device_id)
