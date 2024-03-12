@@ -93,23 +93,37 @@ async def busfunc(BusNo_device_id: str):
     else:
         result.vote_count += 1
         if result.vote_count > result.threshold:
-            db = SessionLocal()
+            db = SessionLocal()  # Start a new session for the transaction
             try:
-
+                # Get all device IDs that voted for this bus
                 device_ids = db.query(Vote.device_id).filter(Vote.bus_no == BusNo).all()
-                device_ids = [device[0] for device in device_ids]
+                device_ids = [device[0] for device in device_ids]  # Flatten list of tuples
+                
+                # Send notification to all voters
                 send_notification_to_voters(device_ids)
+                
+                # Delete votes for this bus from the Vote table
                 db.query(Vote).filter(Vote.bus_no == BusNo).delete()
+                
+                # Add the bus object to the session
+                db.add(result)
+                
+                # Expunge the bus object from the session
                 db.expunge(result)
+                
+                # Remove the bus record
                 db.delete(result)
-                db.commit()
+                
+                db.commit()  # Commit the transaction
                 return "Vote count incremented and notifications sent"
             except Exception as e:
-                db.rollback()
+                db.rollback()  # Rollback the transaction in case of any error
                 raise e
             finally:
-                db.close() 
+                db.close()  # Close the session
+            
         else:
+            # Record the vote
             record_vote(db, BusNo, device_id)
             return "Vote count incremented"
 
