@@ -97,6 +97,7 @@ async def busfunc(BusNo_device_id: str):
         else:
             result.vote_count += 1
             if result.vote_count > result.threshold:
+                record_vote(db, BusNo, device_id)
                 device_ids = db.query(Vote.device_id).filter(Vote.bus_no == BusNo).all()
                 device_ids = [device[0] for device in device_ids]
                 send_notification_to_voters(device_ids)
