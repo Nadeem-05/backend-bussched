@@ -12,18 +12,7 @@ APP_ID = '9147fe2e-8d34-4ce8-9d7e-6ebf30d3470f'
 REST_API_KEY = 'NTczYjgxNDYtN2RjNi00M2I3LWEwOGMtNjc4ZDVlYjMyMDAw'
 
 ONESIGNAL_API_URL = 'https://onesignal.com/api/v1/notifications'
-message = {
-    "app_id": APP_ID,
-    "contents": {"en": "Hooray your dynamic bus has been scheduled!"},
-    "headings": {"en": "Dynamic Bus Scheduled"}
-}
 
-message_json = json.dumps(message)
-
-headers = {
-    'Content-Type': 'application/json',
-    'Authorization': f'Basic {REST_API_KEY}'
-}
 
 app = FastAPI()
 
@@ -70,6 +59,19 @@ async def check_coordinates(new_coord: str):
     else:
         return jsonable_encoder({"message": False})
 def send_notification_to_voters(device_ids):
+    message = {
+    "app_id": APP_ID,
+    "contents": {"en": "Hooray your dynamic bus has been scheduled!"},
+    "headings": {"en": "Dynamic Bus Scheduled"},
+    "include_player_ids" : device_ids
+}
+
+    message_json = json.dumps(message)
+
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Basic {REST_API_KEY}'
+    }
     message["include_player_ids"] = device_ids
     print(device_ids)
     response = requests.post(ONESIGNAL_API_URL, headers=headers, data=message_json)
