@@ -33,6 +33,12 @@ class Vote(Base):
     s_no = Column(Integer, primary_key=True, autoincrement=True)
     bus_no = Column(String(5))
     device_id = Column(String(255))
+class  Active(Base):
+    __tablename__='active_buses'
+    s_no = Column(Integer,primary_key=True, autoincrement=True)
+    bus_no = Column(String(5))
+    origin = Column(String(10))
+    dest = Column(String(10))
     
 Base.metadata.create_all(bind=engine)
 
@@ -63,7 +69,11 @@ def send_notification_to_voters(device_ids):
     "app_id": APP_ID,
     "contents": {"en": "Hooray your dynamic bus has been scheduled!"},
     "headings": {"en": "Dynamic Bus Scheduled"},
-    "include_player_ids" : device_ids
+    "include_player_ids" : device_ids,
+    "large_icon": "https://i.imgur.com/AXydRIM.png",
+    "big_picture":"https://i.imgur.com/Wsf4w9f.png",
+    "android_accent_color":"FFFF0000"
+
 }
 
     message_json = json.dumps(message)
@@ -132,8 +142,6 @@ async def view_databases(db: Session = Depends(get_db)):
     template = env.get_template("view_db.html")
     rendered_html = template.render(votes=votes, buses=buses)
     return HTMLResponse(content=rendered_html)
-
-
 
 def record_vote(db, bus_no, device_id):
     vote = Vote(bus_no=bus_no, device_id=device_id)
